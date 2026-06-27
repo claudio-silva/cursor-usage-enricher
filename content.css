@@ -1,0 +1,12 @@
+[data-ext-col] {
+  white-space: nowrap;
+}
+
+/* Requests is the last column; shrink from 170px to one-third. */
+.dashboard-table-header-row > [role="columnheader"]:last-child,
+.dashboard-table-row > [role="cell"]:last-child {
+  width: calc(170px / 3) !important;
+  min-width: calc(170px / 3) !important;
+  max-width: calc(170px / 3) !important;
+  flex: 0 0 calc(170px / 3) !important;
+}
