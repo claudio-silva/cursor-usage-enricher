@@ -2,26 +2,33 @@
   "use strict";
 
   const MESSAGE_SOURCE = "cursor-usage-ext";
-  const API_PATH = "get-filtered-usage-events";
+  const USAGE_EVENTS_PATH = "get-filtered-usage-events";
+  const USAGE_SUMMARY_PATH = "usage-summary";
 
-  function postPayload(payload) {
-    window.postMessage({ source: MESSAGE_SOURCE, payload }, "*");
+  function postPayload(type, payload) {
+    window.postMessage({ source: MESSAGE_SOURCE, type, payload }, "*");
   }
 
-  function isUsageEventsUrl(url) {
+  function getApiType(url) {
     try {
       const value = typeof url === "string" ? url : url?.url || String(url);
-      return value.includes(API_PATH);
+      if (value.includes(USAGE_EVENTS_PATH)) {
+        return "usage-events";
+      }
+      if (value.includes(USAGE_SUMMARY_PATH)) {
+        return "usage-summary";
+      }
+      return null;
     } catch {
-      return false;
+      return null;
     }
   }
 
-  function handleResponse(response) {
+  function handleResponse(type, response) {
     response
       .clone()
       .json()
-      .then((payload) => postPayload(payload))
+      .then((payload) => postPayload(type, payload))
       .catch(() => {
         // Ignore non-JSON or unreadable responses.
       });
@@ -32,8 +39,9 @@
     return originalFetch.apply(this, args).then((response) => {
       const input = args[0];
       const url = typeof input === "string" ? input : input?.url;
-      if (isUsageEventsUrl(url)) {
-        handleResponse(response);
+      const apiType = getApiType(url);
+      if (apiType) {
+        handleResponse(apiType, response);
       }
       return response;
     });
@@ -49,11 +57,12 @@
 
   XMLHttpRequest.prototype.send = function (...args) {
     this.addEventListener("load", function () {
-      if (!isUsageEventsUrl(this.__cursorUsageUrl)) {
+      const apiType = getApiType(this.__cursorUsageUrl);
+      if (!apiType) {
         return;
       }
       try {
-        postPayload(JSON.parse(this.responseText));
+        postPayload(apiType, JSON.parse(this.responseText));
       } catch {
         // Ignore parse errors.
       }

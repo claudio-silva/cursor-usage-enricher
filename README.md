@@ -1,6 +1,8 @@
 # Cursor Usage Enricher
 
-Chrome extension that adds three columns to the Cursor web **Usage** dashboard table:
+Chrome extension that adds additional usage and cost information to the Cursor Usage dashboard.
+
+Ont the usage table, the extension adds three columns:
 
 | Column | Source |
 | --- | --- |
@@ -9,11 +11,17 @@ Chrome extension that adds three columns to the Cursor web **Usage** dashboard t
 | **Cost (nominal)** | `tokenUsage.totalCents / 100` (full/notional price) |
 
 Columns are inserted immediately after the native **Tokens** column.
+The Requests column is shrunk to one-third of the width, to make more room for the new columns.
+
+The extension also reformats the **On-Demand Usage this Month** summary card: on-demand usage amount displays two decimal places (e.g. `$81.31` / `$100.00` instead of `$81` / `$100`).
 
 ## How it works
 
-1. **`interceptor.js`** (MAIN world, `document_start`) patches `fetch` and `XMLHttpRequest` on `cursor.com/dashboard*`. When the page calls `POST /api/dashboard/get-filtered-usage-events`, the response JSON is forwarded via `window.postMessage`.
-2. **`content.js`** (isolated world) listens for those messages, caches `usageEventsDisplay`, and injects header/body cells by cloning the existing Tokens column cells (matching width and alignment). A `MutationObserver` re-applies enrichment when React redraws the table.
+1. **`interceptor.js`** (MAIN world, `document_start`) patches `fetch` and `XMLHttpRequest` on `cursor.com/dashboard*`. When the page calls:
+   - `POST /api/dashboard/get-filtered-usage-events` — forwards usage events
+   - `GET /api/usage-summary` — forwards billing summary  
+   Responses are forwarded via `window.postMessage`.
+2. **`content.js`** (isolated world) listens for those messages, caches `usageEventsDisplay`, and injects header/body cells by cloning the existing Tokens column cells (matching width and alignment). It also updates the on-demand usage card amounts. A `MutationObserver` re-applies changes when React redraws the page.
 
 ## Install (load unpacked)
 

@@ -10,10 +10,14 @@
     { id: "cost-nominal", label: "Cost (nominal)", valueKey: "costNominal" },
   ];
 
+  const ON_DEMAND_LABEL = "On-Demand Usage this Month";
+
   let events = [];
+  let usageSummary = null;
   let observer = null;
   let observedContainer = null;
   let enrichScheduled = false;
+  let onDemandScheduled = false;
   let enriching = false;
 
   const compactTokenFormat = new Intl.NumberFormat(undefined, {
@@ -249,11 +253,64 @@
     });
   }
 
+  function findOnDemandPanel() {
+    for (const label of document.querySelectorAll(".text-secondary")) {
+      if (label.textContent.trim() !== ON_DEMAND_LABEL) {
+        continue;
+      }
+
+      const panel = label.closest(".rounded-xl");
+      if (panel) {
+        return panel;
+      }
+    }
+
+    return null;
+  }
+
+  function updateOnDemandPanel() {
+    const onDemand = usageSummary?.individualUsage?.onDemand;
+    if (!onDemand?.enabled) {
+      return;
+    }
+
+    const panel = findOnDemandPanel();
+    if (!panel) {
+      return;
+    }
+
+    const amountRow = panel.querySelector(".flex.w-full.min-w-0.items-baseline");
+    if (!amountRow || amountRow.children.length < 2) {
+      return;
+    }
+
+    const usedEl = amountRow.children[0];
+    const limitEl = amountRow.children[1];
+
+    usedEl.textContent = formatUsdDisplay(onDemand.used);
+    limitEl.textContent = `/ ${formatUsdDisplay(onDemand.limit)}`;
+  }
+
+  function scheduleOnDemandUpdate() {
+    if (onDemandScheduled) {
+      return;
+    }
+
+    onDemandScheduled = true;
+    requestAnimationFrame(() => {
+      onDemandScheduled = false;
+      updateOnDemandPanel();
+    });
+  }
+
   function setupNavigationWatcher() {
     const navObserver = new MutationObserver(() => {
       const container = document.querySelector(".dashboard-table-container");
       if (container && events.length > 0) {
         scheduleEnrich();
+      }
+      if (usageSummary) {
+        scheduleOnDemandUpdate();
       }
     });
 
@@ -266,6 +323,12 @@
     }
 
     if (event.data?.source !== MESSAGE_SOURCE) {
+      return;
+    }
+
+    if (event.data.type === "usage-summary") {
+      usageSummary = event.data.payload;
+      scheduleOnDemandUpdate();
       return;
     }
 
