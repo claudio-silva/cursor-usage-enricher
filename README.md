@@ -22,10 +22,10 @@ cost figures are easy to tell apart:
 
 | Column | Origin | Meaning |
 | --- | --- | --- |
-| **Uncached** | injected | `tokenUsage.inputTokens + tokenUsage.outputTokens` — tokens that were actually processed (excludes cache reads/writes) |
-| **Cost (tokens)** | injected | `tokenUsage.totalCents / 100` — the pure token-derived price of the request |
-| **Cost (full)** | injected | `chargedCents / 100` — the full request-level price: what the request would cost if billed outside the subscription (≥ Cost (tokens)) |
-| **Cost (billed)** | native, relabeled from **Cost** | what was actually billed — `-`, `Free`, or an on-demand amount |
+| **Uncached** | injected | `tokenUsage.inputTokens + tokenUsage.outputTokens` - tokens that were actually processed (excludes cache reads/writes) |
+| **Cost (tokens)** | injected | `tokenUsage.totalCents / 100` - the pure token-derived price of the request |
+| **Cost (full)** | injected | `chargedCents / 100` - the full request-level price: what the request would cost if billed outside the subscription (≥ Cost (tokens)) |
+| **Cost (billed)** | native, relabeled from **Cost** | what was actually billed - `-`, `Free`, or an on-demand amount |
 - The **On-Demand Usage this Month** card is reformatted to two decimal places
   (`$81.31 / $100.00` instead of `$81 / $100`).
 - The enriched table is wider than the dashboard's layout gives it, so you may
@@ -35,14 +35,14 @@ cost figures are easy to tell apart:
 
 ## How it works
 
-No extra requests are made — the extension reads the responses of the page's own
+No extra requests are made - the extension reads the responses of the page's own
 API calls:
 
 1. **`interceptor.js`** (MAIN world, `document_start`) patches `fetch` and
    `XMLHttpRequest` on `cursor.com/dashboard*` and forwards the payloads of
    `POST /api/dashboard/get-filtered-usage-events` and `GET /api/usage-summary`
    to the page via `window.postMessage`. It buffers the latest payload of each
-   type and replays it when the content script announces itself — this covers
+   type and replays it when the content script announces itself - this covers
    API responses that arrive before `document_idle`, which would otherwise be
    dispatched to zero listeners and lost.
 2. **`content.js`** (isolated world) sends a ready ping on startup, receives
@@ -67,7 +67,7 @@ Requires Chrome **111+** (Manifest V3 `world: "MAIN"` content scripts).
 ## Privacy
 
 The extension runs entirely in your browser. It makes **no additional network
-requests** and sends **no data anywhere** — it only reads the responses of API
+requests** and sends **no data anywhere** - it only reads the responses of API
 calls the dashboard itself makes while you're logged in.
 
 ## Disclaimer
@@ -76,7 +76,7 @@ This is an **unofficial, community-built** extension. It is not affiliated with,
 endorsed by, or supported by Cursor or Anysphere.
 
 It relies on Cursor's **undocumented internal API endpoints and DOM structure**,
-which may change or break at any time without notice — and may break this
+which may change or break at any time without notice - and may break this
 extension with them.
 
 **This software is provided "as is", without warranty of any kind. By using it,
