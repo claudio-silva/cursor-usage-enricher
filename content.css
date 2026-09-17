@@ -2,7 +2,26 @@
   white-space: nowrap;
 }
 
-/* The native Cost column is 170px; shrink it to match the other numeric columns. */
+/* Reclaim horizontal space so the injected columns fit the dashboard's
+   fixed content width: tighter row gap, slimmer Date/Type columns, and
+   the wide native Cost column shrunk to match the other numeric columns. */
+.dashboard-table-header-row,
+.dashboard-table-row {
+  gap: 7px !important;
+}
+
+.dashboard-table-header-row > [role="columnheader"][style*="width: 130px"],
+.dashboard-table-row > [role="cell"][style*="width: 130px"] {
+  width: 110px !important;
+  flex: 0 0 110px !important;
+}
+
+.dashboard-table-header-row > [role="columnheader"][style*="width: 90px"],
+.dashboard-table-row > [role="cell"][style*="width: 90px"] {
+  width: 80px !important;
+  flex: 0 0 80px !important;
+}
+
 .dashboard-table-header-row > [role="columnheader"][style*="width: 170px"],
 .dashboard-table-row > [role="cell"][style*="width: 170px"] {
   width: 95px !important;

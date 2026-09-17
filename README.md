@@ -28,8 +28,9 @@ cost figures are easy to tell apart:
 | **Cost (billed)** | native, relabeled from **Cost** | what was actually billed - `-`, `Free`, or an on-demand amount |
 - The **On-Demand Usage this Month** card is reformatted to two decimal places
   (`$81.31 / $100.00` instead of `$81 / $100`).
-- The enriched table is wider than the dashboard's layout gives it, so you may
-  need to scroll the table horizontally to see all columns. (A fix is coming.)
+- To fit the extra columns without horizontal scrolling, the extension tightens
+  the row gap and slims the Date, Type, and Cost columns. On narrow windows the
+  table still scrolls horizontally, same as the native table.
 - Hover any injected cell for the exact value (full token counts, 4-decimal costs).
 - Re-applies automatically when React redraws or you navigate within the dashboard.
 

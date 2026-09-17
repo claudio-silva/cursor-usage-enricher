@@ -144,7 +144,6 @@
     }
 
     renameNativeCostHeader(headerRow);
-    adjustContainerWidth(container, headerRow);
 
     return true;
   }
@@ -166,41 +165,6 @@
 
     const label = native.querySelector("span") || native;
     label.textContent = "Cost (billed)";
-  }
-
-  // The page computes the container's inline min-width from the native column
-  // set only, so the injected columns overflow into horizontal scrolling.
-  // Measure our delta (added column widths, minus any width our CSS removed
-  // from native columns) and add it to React's value. Recomputed on every
-  // pass: if React rewrites the style, we re-apply on top of its new base;
-  // repeated passes stay idempotent via the remembered set value.
-  function adjustContainerWidth(container, headerRow) {
-    const declared = parseFloat(container.style.minWidth);
-    if (!Number.isFinite(declared)) {
-      return;
-    }
-    const current = declared;
-    const lastSet = Number(container.dataset.extMinWidth);
-    const base =
-      current === lastSet ? Number(container.dataset.extBase) || 0 : current;
-
-    let delta = 0;
-    for (const cell of headerRow.querySelectorAll('[role="columnheader"]')) {
-      const width = cell.getBoundingClientRect().width;
-      const declaredWidth = parseFloat(cell.style.width);
-      if (cell.hasAttribute(EXT_COL_ATTR)) {
-        delta += width;
-      } else if (Number.isFinite(declaredWidth) && width < declaredWidth) {
-        delta += width - declaredWidth;
-      }
-    }
-
-    const target = Math.ceil(base + delta);
-    if (current !== target) {
-      container.style.minWidth = `${target}px`;
-    }
-    container.dataset.extBase = String(base);
-    container.dataset.extMinWidth = String(target);
   }
 
   function enrichRows(container, tokensIndex) {
