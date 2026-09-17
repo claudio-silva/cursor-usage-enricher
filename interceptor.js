@@ -2,12 +2,28 @@
   "use strict";
 
   const MESSAGE_SOURCE = "cursor-usage-ext";
+  const READY_SOURCE = "cursor-usage-ext-ready";
   const USAGE_EVENTS_PATH = "get-filtered-usage-events";
   const USAGE_SUMMARY_PATH = "usage-summary";
 
+  const lastPayloads = new Map();
+
   function postPayload(type, payload) {
+    lastPayloads.set(type, payload);
     window.postMessage({ source: MESSAGE_SOURCE, type, payload }, "*");
   }
+
+  // The content script attaches its message listener at document_idle, which can
+  // be after the page's first API calls. It posts a ready ping on startup; replay
+  // any payloads captured before it was listening.
+  window.addEventListener("message", (event) => {
+    if (event.source !== window || event.data?.source !== READY_SOURCE) {
+      return;
+    }
+    for (const [type, payload] of lastPayloads) {
+      window.postMessage({ source: MESSAGE_SOURCE, type, payload }, "*");
+    }
+  });
 
   function getApiType(url) {
     try {

@@ -2,12 +2,13 @@
   "use strict";
 
   const MESSAGE_SOURCE = "cursor-usage-ext";
+  const READY_SOURCE = "cursor-usage-ext-ready";
   const EXT_COL_ATTR = "data-ext-col";
 
   const COLUMNS = [
     { id: "effective-tokens", label: "Uncached", valueKey: "effectiveTokens" },
-    { id: "cost", label: "Cost", valueKey: "cost" },
-    { id: "cost-nominal", label: "Cost (nominal)", valueKey: "costNominal" },
+    { id: "cost-tokens", label: "Cost (tokens)", valueKey: "costTokens" },
+    { id: "cost-full", label: "Cost (full)", valueKey: "costFull" },
   ];
 
   const ON_DEMAND_LABEL = "On-Demand Usage this Month";
@@ -44,20 +45,20 @@
     const usage = event.tokenUsage || {};
     const effective = effectiveTokens(event);
     const charged = Number(event.chargedCents) || 0;
-    const notional = Number(usage.totalCents) || 0;
+    const tokenTotal = Number(usage.totalCents) || 0;
 
     return {
       effectiveTokens: {
         text: compactTokenFormat.format(effective),
         title: `${exactTokenFormat.format(effective)} tokens (input + output)`,
       },
-      cost: {
+      costTokens: {
+        text: formatUsdDisplay(tokenTotal),
+        title: formatUsdExact(tokenTotal),
+      },
+      costFull: {
         text: formatUsdDisplay(charged),
         title: formatUsdExact(charged),
-      },
-      costNominal: {
-        text: formatUsdDisplay(notional),
-        title: formatUsdExact(notional),
       },
     };
   }
@@ -142,7 +143,64 @@
       headerRow.insertBefore(clone, insertBeforeNode);
     }
 
+    renameNativeCostHeader(headerRow);
+    adjustContainerWidth(container, headerRow);
+
     return true;
+  }
+
+  // The dashboard's own trailing "Cost" column shows what was actually billed
+  // ("-", "Free", or an on-demand amount). Relabel it so it is not confused
+  // with the injected cost columns. Re-applied on every enrich pass, so React
+  // redraws restoring the original label are handled automatically.
+  function renameNativeCostHeader(headerRow) {
+    const headers = [...headerRow.querySelectorAll('[role="columnheader"]')];
+    const native = headers.find(
+      (header) =>
+        !header.hasAttribute(EXT_COL_ATTR) &&
+        header.textContent.trim() === "Cost"
+    );
+    if (!native) {
+      return;
+    }
+
+    const label = native.querySelector("span") || native;
+    label.textContent = "Cost (billed)";
+  }
+
+  // The page computes the container's inline min-width from the native column
+  // set only, so the injected columns overflow into horizontal scrolling.
+  // Measure our delta (added column widths, minus any width our CSS removed
+  // from native columns) and add it to React's value. Recomputed on every
+  // pass: if React rewrites the style, we re-apply on top of its new base;
+  // repeated passes stay idempotent via the remembered set value.
+  function adjustContainerWidth(container, headerRow) {
+    const declared = parseFloat(container.style.minWidth);
+    if (!Number.isFinite(declared)) {
+      return;
+    }
+    const current = declared;
+    const lastSet = Number(container.dataset.extMinWidth);
+    const base =
+      current === lastSet ? Number(container.dataset.extBase) || 0 : current;
+
+    let delta = 0;
+    for (const cell of headerRow.querySelectorAll('[role="columnheader"]')) {
+      const width = cell.getBoundingClientRect().width;
+      const declaredWidth = parseFloat(cell.style.width);
+      if (cell.hasAttribute(EXT_COL_ATTR)) {
+        delta += width;
+      } else if (Number.isFinite(declaredWidth) && width < declaredWidth) {
+        delta += width - declaredWidth;
+      }
+    }
+
+    const target = Math.ceil(base + delta);
+    if (current !== target) {
+      container.style.minWidth = `${target}px`;
+    }
+    container.dataset.extBase = String(base);
+    container.dataset.extMinWidth = String(target);
   }
 
   function enrichRows(container, tokensIndex) {
@@ -338,4 +396,8 @@
 
   setupNavigationWatcher();
   scheduleEnrich();
+
+  // Ask the interceptor to replay any API payloads captured before our
+  // message listener above was attached (fetch can fire before document_idle).
+  window.postMessage({ source: READY_SOURCE }, "*");
 })();

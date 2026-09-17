@@ -21,12 +21,16 @@ On the usage events table, three columns are inserted right after **Tokens**:
 | Column | Source |
 | --- | --- |
 | **Uncached** | `tokenUsage.inputTokens + tokenUsage.outputTokens` |
-| **Cost** | `chargedCents / 100` (actual amount charged) |
-| **Cost (nominal)** | `tokenUsage.totalCents / 100` (full/notional price) |
+| **Cost (tokens)** | `tokenUsage.totalCents / 100` (pure token-derived price) |
+| **Cost (full)** | `chargedCents / 100` (full request-level price — what it would cost if billed outside the subscription) |
 
-- The **Requests** column is shrunk to one-third of its width to make room.
+- The dashboard's own trailing **Cost** column — which shows what was actually
+  billed (`-`, `Free`, or an on-demand amount) — is relabeled **Cost (billed)**
+  to distinguish it from the injected columns.
 - The **On-Demand Usage this Month** card is reformatted to two decimal places
   (`$81.31 / $100.00` instead of `$81 / $100`).
+- The enriched table is wider than the dashboard's layout gives it, so you may
+  need to scroll the table horizontally to see all columns. (A fix is coming.)
 - Hover any injected cell for the exact value (full token counts, 4-decimal costs).
 - Re-applies automatically when React redraws or you navigate within the dashboard.
 
@@ -38,8 +42,12 @@ API calls:
 1. **`interceptor.js`** (MAIN world, `document_start`) patches `fetch` and
    `XMLHttpRequest` on `cursor.com/dashboard*` and forwards the payloads of
    `POST /api/dashboard/get-filtered-usage-events` and `GET /api/usage-summary`
-   to the page via `window.postMessage`.
-2. **`content.js`** (isolated world) receives those payloads, caches the usage
+   to the page via `window.postMessage`. It buffers the latest payload of each
+   type and replays it when the content script announces itself — this covers
+   API responses that arrive before `document_idle`, which would otherwise be
+   dispatched to zero listeners and lost.
+2. **`content.js`** (isolated world) sends a ready ping on startup, receives
+   those payloads, caches the usage
    events, and injects header/body cells by cloning the existing **Tokens**
    column cells (preserving width and alignment). A `MutationObserver` re-applies
    the enrichment whenever the dashboard re-renders.

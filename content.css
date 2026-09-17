@@ -2,11 +2,11 @@
   white-space: nowrap;
 }
 
-/* Requests is the last column; shrink from 170px to one-third. */
-.dashboard-table-header-row > [role="columnheader"]:last-child,
-.dashboard-table-row > [role="cell"]:last-child {
-  width: calc(170px / 3) !important;
-  min-width: calc(170px / 3) !important;
-  max-width: calc(170px / 3) !important;
-  flex: 0 0 calc(170px / 3) !important;
+/* The native Cost column is 170px; shrink it to match the other numeric columns. */
+.dashboard-table-header-row > [role="columnheader"][style*="width: 170px"],
+.dashboard-table-row > [role="cell"][style*="width: 170px"] {
+  width: 95px !important;
+  min-width: 95px !important;
+  max-width: 95px !important;
+  flex: 0 0 95px !important;
 }
