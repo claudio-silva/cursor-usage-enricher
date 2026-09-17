@@ -16,17 +16,16 @@ page already fetches but doesn't display.
 
 ## Features
 
-On the usage events table, three columns are inserted right after **Tokens**:
+On the usage events table, three columns are inserted right after **Tokens**,
+and the dashboard's own trailing **Cost** column is relabeled so the three
+cost figures are easy to tell apart:
 
-| Column | Source |
-| --- | --- |
-| **Uncached** | `tokenUsage.inputTokens + tokenUsage.outputTokens` |
-| **Cost (tokens)** | `tokenUsage.totalCents / 100` (pure token-derived price) |
-| **Cost (full)** | `chargedCents / 100` (full request-level price — what it would cost if billed outside the subscription) |
-
-- The dashboard's own trailing **Cost** column — which shows what was actually
-  billed (`-`, `Free`, or an on-demand amount) — is relabeled **Cost (billed)**
-  to distinguish it from the injected columns.
+| Column | Origin | Meaning |
+| --- | --- | --- |
+| **Uncached** | injected | `tokenUsage.inputTokens + tokenUsage.outputTokens` — tokens that were actually processed (excludes cache reads/writes) |
+| **Cost (tokens)** | injected | `tokenUsage.totalCents / 100` — the pure token-derived price of the request |
+| **Cost (full)** | injected | `chargedCents / 100` — the full request-level price: what the request would cost if billed outside the subscription (≥ Cost (tokens)) |
+| **Cost (billed)** | native, relabeled from **Cost** | what was actually billed — `-`, `Free`, or an on-demand amount |
 - The **On-Demand Usage this Month** card is reformatted to two decimal places
   (`$81.31 / $100.00` instead of `$81 / $100`).
 - The enriched table is wider than the dashboard's layout gives it, so you may
