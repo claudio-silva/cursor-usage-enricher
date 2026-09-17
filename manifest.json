@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Cursor Usage Enricher",
+  "name": "Usage Enricher for Cursor",
   "version": "1.1.0",
-  "description": "Adds additional usage and cost information to the Cursor Usage dashboard.",
+  "description": "Adds additional usage and cost information to the Cursor usage dashboard.",
   "minimum_chrome_version": "111",
   "icons": {
     "16": "icons/icon16.png",
@@ -10,7 +10,7 @@
     "128": "icons/icon128.png"
   },
   "action": {
-    "default_title": "Cursor Usage Enricher",
+    "default_title": "Usage Enricher for Cursor",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
