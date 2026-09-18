@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Usage Enricher for Cursor",
-  "version": "1.1.0",
+  "version": "1.1.2",
   "description": "Adds additional usage and cost information to the Cursor usage dashboard.",
   "minimum_chrome_version": "111",
   "icons": {

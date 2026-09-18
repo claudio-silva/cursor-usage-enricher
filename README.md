@@ -3,97 +3,93 @@
 
   # Usage Enricher for Cursor
 
-  **A Chrome extension that reveals the real numbers behind your Cursor usage.**
+  **More context for the numbers on Cursor's usage dashboard.**
 
   ![Chrome MV3](https://img.shields.io/badge/Chrome-MV3-4285F4?logo=googlechrome&logoColor=white)
   ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
   ![Unofficial](https://img.shields.io/badge/status-unofficial-orange)
 </div>
 
-Cursor's usage dashboard shows you *what* you were charged, but not the full picture.
-This extension enriches the dashboard with per-request token and cost data that the
-page already fetches but doesn't display.
+Cursor's dashboard tells you how many tokens a request used and what you were billed. Useful - but not always enough to understand where the cost came from or how caching affected the request.
 
-## Features
+Usage Enricher is a small Chrome extension that adds that missing context directly to the existing usage table. It uses data the dashboard already loads, without sending additional requests or replacing Cursor's own figures.
 
-On the usage events table, three columns are inserted right after **Tokens**,
-and the dashboard's own trailing **Cost** column is relabeled so the three
-cost figures are easy to tell apart:
+## What it adds
 
-| Column | Origin | Meaning |
+The extension adds three columns beside **Tokens** and renames Cursor's original **Cost** column to **Cost (billed)**, making the different figures easier to compare.
+
+| Column | What it tells you | Formula / source |
 | --- | --- | --- |
-| **Uncached** | injected | `tokenUsage.inputTokens + tokenUsage.outputTokens` - tokens that were actually processed (excludes cache reads/writes) |
-| **Cost (tokens)** | injected | `tokenUsage.totalCents / 100` - the pure token-derived price of the request |
-| **Cost (full)** | injected | `chargedCents / 100` - the full request-level price: what the request would cost if billed outside the subscription (≥ Cost (tokens)) |
-| **Cost (billed)** | native, relabeled from **Cost** | what was actually billed - `-`, `Free`, or an on-demand amount |
-- The **On-Demand Usage this Month** card is reformatted to two decimal places
-  (`$81.31 / $100.00` instead of `$81 / $100`).
-- To fit the extra columns without horizontal scrolling, the extension tightens
-  the row gap and slims the Date, Type, and Cost columns. On narrow windows the
-  table still scrolls horizontally, same as the native table.
-- Hover any injected cell for the exact value (full token counts, 4-decimal costs).
-- Re-applies automatically when React redraws or you navigate within the dashboard.
+| **Uncached** | How many input and output tokens were processed, excluding cache reads and writes. | `inputTokens + outputTokens` |
+| **Cost (tokens)** | The portion of the request price attributed to token usage. | `tokenUsage.totalCents / 100` |
+| **Cost (full)** | The request's full calculated price before subscription billing is taken into account. | `chargedCents / 100` |
+| **Cost (billed)** | What Cursor says was actually billed: an on-demand amount, `Free`, or `-`. | Cursor's existing dashboard value |
+
+It also:
+
+- shows exact token counts and four-decimal cost values on hover;
+- displays on-demand usage and its limit to two decimal places;
+- keeps the wider table compact while preserving horizontal scrolling on narrow windows;
+- updates automatically as the dashboard refreshes or you navigate within it.
+
+## Installation
+
+The extension is not distributed through the Chrome Web Store. Install it from source as an unpacked extension:
+
+```sh
+git clone https://github.com/claudio-silva/cursor-usage-enricher.git
+```
+
+1. Open `chrome://extensions` in Chrome.
+2. Enable **Developer mode**.
+3. Select **Load unpacked**.
+4. Choose the cloned `cursor-usage-enricher` folder.
+5. Open [Cursor's usage dashboard](https://cursor.com/dashboard/usage) and reload the page.
+
+Chrome 111 or newer is required.
+
+### Updating
+
+Pull the latest changes in the cloned repository, then click the extension's **Reload** button on `chrome://extensions`:
+
+```sh
+git pull
+```
+
+## Using it
+
+Once installed, visit Cursor's usage dashboard as usual. The additional columns appear in the usage-events table; there is no separate interface or configuration.
+
+The values are most useful when comparing:
+
+- total tokens with tokens processed outside the cache;
+- token-derived cost with the full calculated request cost;
+- calculated cost with the amount Cursor actually billed.
 
 ## How it works
 
-No extra requests are made - the extension reads the responses of the page's own
-API calls:
+Usage Enricher runs only on Cursor dashboard pages. It reads the usage data already returned to the page and presents selected fields in the existing table. It makes no additional API calls, and it re-applies the extra columns when Cursor redraws the dashboard.
 
-1. **`interceptor.js`** (MAIN world, `document_start`) patches `fetch` and
-   `XMLHttpRequest` on `cursor.com/dashboard*` and forwards the payloads of
-   `POST /api/dashboard/get-filtered-usage-events` and `GET /api/usage-summary`
-   to the page via `window.postMessage`. It buffers the latest payload of each
-   type and replays it when the content script announces itself - this covers
-   API responses that arrive before `document_idle`, which would otherwise be
-   dispatched to zero listeners and lost.
-2. **`content.js`** (isolated world) sends a ready ping on startup, receives
-   those payloads, caches the usage
-   events, and injects header/body cells by cloning the existing **Tokens**
-   column cells (preserving width and alignment). A `MutationObserver` re-applies
-   the enrichment whenever the dashboard re-renders.
+The extension does not calculate usage from prompts, inspect editor activity, or independently verify Cursor's billing. It presents values from Cursor's own dashboard responses in a more detailed format.
 
-Row-to-event matching is positional (row *N* → `usageEventsDisplay[N]`), with an
-optional timestamp sanity check on the Date cell's `title` attribute.
+## Privacy and permissions
 
-## Install (load unpacked)
+All processing happens locally in your browser. The extension:
 
-1. Clone this repository
-2. Open `chrome://extensions`
-3. Enable **Developer mode**
-4. Click **Load unpacked** and select the cloned folder
-5. Open [cursor.com/dashboard/usage](https://cursor.com/dashboard/usage) and reload
+- runs only on `https://cursor.com/dashboard*`;
+- makes no additional network requests;
+- does not transmit, store, or share your usage data;
+- does not require an account, API key, or external service.
 
-Requires Chrome **111+** (Manifest V3 `world: "MAIN"` content scripts).
+You can inspect the complete source in this repository.
 
-## Privacy
+## Limitations and disclaimer
 
-The extension runs entirely in your browser. It makes **no additional network
-requests** and sends **no data anywhere** - it only reads the responses of API
-calls the dashboard itself makes while you're logged in.
+This is an **unofficial, community-built** extension. It is not affiliated with, endorsed by, or supported by Cursor or Anysphere.
 
-## Disclaimer
+It depends on Cursor's undocumented dashboard responses and page structure. Either may change without notice, which can make displayed values incomplete, misaligned, or unavailable until the extension is updated. Treat the added information as a convenience for understanding usage - not as an authoritative invoice, billing audit, or guarantee of future charges. For billing decisions, refer to Cursor's official records and support.
 
-This is an **unofficial, community-built** extension. It is not affiliated with,
-endorsed by, or supported by Cursor or Anysphere.
-
-It relies on Cursor's **undocumented internal API endpoints and DOM structure**,
-which may change or break at any time without notice - and may break this
-extension with them.
-
-**This software is provided "as is", without warranty of any kind. By using it,
-you accept full responsibility for that use**, including compliance with
-Cursor's Terms of Service and any consequences thereof. The author assumes no
-liability for any damages, data issues, or account actions arising from its use.
-
-## Files
-
-| File | Role |
-| --- | --- |
-| `manifest.json` | Extension manifest |
-| `interceptor.js` | Network interception bridge (MAIN world) |
-| `content.js` | Table enrichment + mutation observer |
-| `content.css` | Styling for injected cells and column widths |
-| `icons/` | Extension icons |
+Use of this extension is at your own risk and remains subject to Cursor's Terms of Service. The software is provided without warranty; see the [MIT License](LICENSE) for the full terms.
 
 ## License
 

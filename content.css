@@ -2,30 +2,42 @@
   white-space: nowrap;
 }
 
-/* Reclaim horizontal space so the injected columns fit the dashboard's
-   fixed content width: tighter row gap, slimmer Date/Type columns, and
-   the wide native Cost column shrunk to match the other numeric columns. */
+/* Cursor sets an inline minimum from the native columns. Reset it so the
+   injected columns can share the visible width instead of overflowing it. */
+.dashboard-table-container {
+  min-width: 100% !important;
+}
+
+/* Compact fixed-width columns and relax native flexible columns. Layouts that
+   are genuinely narrow still overflow through Cursor's own scroll container. */
 .dashboard-table-header-row,
 .dashboard-table-row {
   gap: 7px !important;
 }
 
-.dashboard-table-header-row > [role="columnheader"][style*="width: 130px"],
-.dashboard-table-row > [role="cell"][style*="width: 130px"] {
-  width: 110px !important;
-  flex: 0 0 110px !important;
+[data-ext-compact="date"] {
+  width: 100px !important;
+  min-width: 100px !important;
+  max-width: 100px !important;
+  flex: 0 0 100px !important;
 }
 
-.dashboard-table-header-row > [role="columnheader"][style*="width: 90px"],
-.dashboard-table-row > [role="cell"][style*="width: 90px"] {
-  width: 80px !important;
-  flex: 0 0 80px !important;
+[data-ext-compact="flexible"] {
+  min-width: 85px !important;
 }
 
-.dashboard-table-header-row > [role="columnheader"][style*="width: 170px"],
-.dashboard-table-row > [role="cell"][style*="width: 170px"] {
-  width: 95px !important;
-  min-width: 95px !important;
-  max-width: 95px !important;
-  flex: 0 0 95px !important;
+[data-ext-compact="type"] {
+  width: 75px !important;
+  min-width: 75px !important;
+  max-width: 75px !important;
+  flex: 0 0 75px !important;
+}
+
+[data-ext-compact="numeric"],
+[data-ext-col],
+[data-ext-compact="cost"] {
+  width: 90px !important;
+  min-width: 90px !important;
+  max-width: 90px !important;
+  flex: 0 0 90px !important;
 }

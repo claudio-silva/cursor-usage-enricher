@@ -4,12 +4,28 @@
   const MESSAGE_SOURCE = "cursor-usage-ext";
   const READY_SOURCE = "cursor-usage-ext-ready";
   const EXT_COL_ATTR = "data-ext-col";
+  const COMPACT_COL_ATTR = "data-ext-compact";
 
   const COLUMNS = [
     { id: "effective-tokens", label: "Uncached", valueKey: "effectiveTokens" },
     { id: "cost-tokens", label: "Cost (tokens)", valueKey: "costTokens" },
     { id: "cost-full", label: "Cost (full)", valueKey: "costFull" },
   ];
+
+  // Optional columns vary by plan. Only headers present in the current table are
+  // marked, keeping row alignment independent of a particular column set.
+  const COMPACT_COLUMNS = new Map([
+    ["Date", "date"],
+    ["Date (UTC)", "date"],
+    ["User", "flexible"],
+    ["PR Author", "flexible"],
+    ["Repo", "flexible"],
+    ["Type", "type"],
+    ["Model", "flexible"],
+    ["Tokens", "numeric"],
+    ["Cost", "cost"],
+    ["Cost (billed)", "cost"],
+  ]);
 
   const ON_DEMAND_LABEL = "On-Demand Usage this Month";
 
@@ -80,6 +96,29 @@
 
   function getRowCells(row) {
     return [...row.querySelectorAll('[role="cell"]')];
+  }
+
+  function markCompactColumns(container) {
+    const headerRow = container.querySelector(".dashboard-table-header-row");
+    const rowsContainer = container.querySelector(".dashboard-table-rows");
+    if (!headerRow || !rowsContainer) {
+      return;
+    }
+
+    const headers = [...headerRow.querySelectorAll('[role="columnheader"]')];
+    const rows = [...rowsContainer.querySelectorAll(".dashboard-table-row")];
+
+    headers.forEach((header, index) => {
+      const compactId = COMPACT_COLUMNS.get(header.textContent.trim());
+      if (!compactId) {
+        return;
+      }
+
+      header.setAttribute(COMPACT_COL_ATTR, compactId);
+      for (const row of rows) {
+        getRowCells(row)[index]?.setAttribute(COMPACT_COL_ATTR, compactId);
+      }
+    });
   }
 
   function parseRowTimestampSeconds(row) {
@@ -255,6 +294,7 @@
     disconnectObserver();
 
     try {
+      markCompactColumns(container);
       enrichHeaders(container, tokensIndex);
       enrichRows(container, tokensIndex);
     } finally {
